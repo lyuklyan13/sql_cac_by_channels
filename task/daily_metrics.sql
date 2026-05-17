@@ -1,3 +1,27 @@
+-- КРОК 1:
+WITH ranked_snapshots AS (
+  SELECT
+    source,
+    ad_id,
+    date,
+    spend,
+    impressions,
+    clicks,
+    installs,
+    registrations,
+    -- ROW_NUMBER нумерує записи від найновішого (DESC) до найстарішого
+    ROW_NUMBER() OVER(PARTITION BY ad_id, date ORDER BY timestamp DESC) AS rnk
+  FROM `train-496311.workshop_sql.marketing_ads_raw` 
+),
+
+deduped_daily_ads AS (
+  SELECT *
+  FROM ranked_snapshots
+  WHERE rnk = 1
+),
+
+-- КРОК 2:
+  
 -- Агрегуємо очищені дані по дню і каналу
 daily_source_metrics AS (
   SELECT
@@ -19,6 +43,7 @@ daily_source_metrics AS (
 SELECT source, ROUND(SUM(daily_spend), 0) AS total_spend
 FROM daily_source_metrics
 GROUP BY 1
+
 
 -- Варто зауважати, що результати вийшли у 100 разів ( загальний spend по каналах )
 -- більші ніж у Підказці 
